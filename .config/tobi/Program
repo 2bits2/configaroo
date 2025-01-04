@@ -1,0 +1,3 @@
+#!/bin/sh
+
+dunstify "That worked $1"

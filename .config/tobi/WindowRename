@@ -1,0 +1,3 @@
+#!/bin/sh
+
+rofi -p "rename $(xdotool getactivewindow getwindowname)" -dmenu  | xargs wmctrl -r ":ACTIVE:" -N

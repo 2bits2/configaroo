@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# first argument
+# takes the menu 
+# listing
+options_file="$1"
+if [ -z "${options_file// }" ]; then
+	options_file="Main"
+fi
+
+cat "$TOBI_ENV/menu/$options_file" | rofi -dmenu -monitor -4 -p "command" -auto-select -case-sensitive -matching prefix | awk '{ if($4) {print $4" "$3;} else { print $3;}}' | xargs -I % echo "$TOBI_ENV/"% "${@:3}" | sh

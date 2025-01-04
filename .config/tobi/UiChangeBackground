@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# changes the color scheme and background
+# according to to a randomly selected image 
+# in the home folder
+find "$TOBI_ENV/wallpapers" -name "*.jpg" -or -name "*.png" | shuf| head -n 1 | xargs wal -i

@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# this script displays
+# the connected hdmi monitor
+# next to the primary screen
+
+# get the connected hdmi target
+hdmi_target=$(xrandr | grep -e 'HDMI.* connected' | awk '{print $1}')
+
+# get the screen width
+# of the primary display
+# because we want to display
+# the connected monitor next to it
+primary_screen_w=$(xrandr | grep primary | awk '{split($4, a, "x"); print a[1]; }')
+
+# screen position
+# for connected monitor
+# next to the primary screen
+# <x>x<y>
+new_screen_position="${primary_screen_w}x0"
+
+# do the magic
+xrandr --output $hdmi_target --auto --pos $new_screen_position

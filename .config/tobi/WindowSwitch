@@ -1,0 +1,3 @@
+#!/bin/sh
+rofi -monitor -4 -show window -auto-select -case-sensitive -matching prefix -window-match-fields title
+

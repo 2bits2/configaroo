@@ -1,213 +1,65 @@
-## Display Chord Options
-from libqtile.widget import base
-from libqtile.lazy import LazyCall
-from libqtile import bar, layout, qtile, widget, hook
-from libqtile.config import Click, Drag, Group, Key, Match, Screen, KeyChord
+# Copyright (c) 2010 Aldo Cortesi
+# Copyright (c) 2010, 2014 dequis
+# Copyright (c) 2012 Randall Ma
+# Copyright (c) 2012-2014 Tycho Andersen
+# Copyright (c) 2012 Craig Barnes
+# Copyright (c) 2013 horsik
+# Copyright (c) 2013 Tao Sauvage
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+from libqtile import bar, layout, qtile, widget
+from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
-from libqtile.utils import guess_terminal, send_notification
-from os.path import expanduser, expandvars
-import os
-import subprocess
-import qtile_extras
-
-from qtile_extras.popup.toolkit import (
-    PopupRelativeLayout,
-    PopupImage,
-    PopupText
-)
-
-from qtile_extras.widget.decorations import PowerLineDecoration
-
-powerline = {
-    "decorations": [
-        PowerLineDecoration()
-    ]
-}
-
-
-
-
-class ChordOptions(base._TextBox):
-    """Display possible modes"""
-    defaults = [
-        (
-            "chords_colors",
-            {},
-            "colors per chord in form of tuple {'chord_name': ('bg', 'fg')}. "
-            "Where a chord name is not in the dictionary, the default ``background`` and ``foreground``"
-            " values will be used.",
-        ),
-        (
-            "name_transform",
-            lambda txt: txt,
-            "preprocessor for chord name it is pure function string -> string",
-        ),
-    ]
-
-    def __init__(self, mapping, width=bar.CALCULATED, **config):
-        base._TextBox.__init__(self, "", width, **config)
-        self.add_defaults(ChordOptions.defaults)
-        self.mapping = mapping
-
-    def _configure(self, qtile, bar):
-        base._TextBox._configure(self, qtile, bar)
-        self.default_background = self.background
-        self.default_foreground = self.foreground
-        self.text = ""
-        self._setup_hooks()
-
-    def _setup_hooks(self):
-        def hook_enter_chord(chord_name):
-            # if chord_name is True:
-            #     self.text = ""
-            #     self.reset_colours()
-            #     return
-
-            self.text = ' '.join([f"{shortcut}:{description}" for shortcut, description in self.mapping[chord_name]] )
-            lazy.spawn(f"rofi -e hallo")
-            if chord_name in self.chords_colors:
-                (self.background, self.foreground) = self.chords_colors.get(chord_name)
-            else:
-                self.reset_colours()
-
-            self.bar.draw()
-
-        hook.subscribe.enter_chord(hook_enter_chord)
-        hook.subscribe.leave_chord(self.clear)
-
-    def reset_colours(self):
-        self.background = self.default_background
-        self.foreground = self.default_foreground
-
-    def clear(self, *args):
-        self.reset_colours()
-        self.text = ""
-        self.bar.draw()
-
+from libqtile.utils import guess_terminal
 
 mod = "mod4"
 terminal = guess_terminal()
 
 @hook.subscribe.startup_once
-def startup_once():
-    script = expandvars("$TOBI_ENV/autostart.sh")
-    subprocess.call([script])
-    return
-
-def ungrabchords(func):
-    def wrapped_function(qtile):
-        func(qtile)
-        qtile.ungrab_all_chords()
-        return 
-    return wrapped_function
-
-# config_keychords = {
-    # "key": "space",
-    # "desc": "custom bindings",
-    # "func": lazy.function(ungrabchords(open_menu))
-    # "mode": "custom",
-    # "options": [
-    #     {
-    #         "key": "r",
-    #         "desc": "renameWindow",
-    #         "func": lazy.function(ungrabchords(rename_window)), 
-    #     },
-    #     {
-    #         "key": "s",
-    #         "desc": "switchWindow",
-    #         "func": lazy.function(ungrabchords(change_window)), 
-    #     },
-    #     {
-    #         "key": "u",
-    #         "desc": "ui",
-    #         "mode": "ui",
-    #         "options": [
-    #             {
-    #                 "key": "w",
-    #                 "desc": "changeWallpaper",
-    #                 "func": lazy.function(ungrabchords(change_wallpaper))
-    #             }
-    #         ]
-    #     }
-    # ]
-#}
-
-mode_key_mapping = {}
-
-def get_key_options(key_options):
-    if isinstance(key_options, dict):
-        # oooh we need to have a keychord
-        # with the options as keys
-        mode = key_options.get("mode", None)
-        if not mode:
-            return Key(
-                [], 
-                key_options["key"], 
-                key_options["func"],
-                desc=key_options["desc"],
-                swallow=True
-            )
-
-        sub_options = get_key_options(key_options["options"])
-        usable_keys = [(option.key, option.desc) for option in sub_options]
-        mode_key_mapping[mode] = usable_keys
-
-        return KeyChord(
-            modifiers=[], 
-            key=key_options["key"],
-            submappings=sub_options,
-            mode=False,
-            name=key_options["mode"],
-            desc=key_options["desc"],
-            swallow=True
-        )
-
-    return [
-        get_key_options(option) 
-        for option in key_options 
-    ]
-
-
-#custom_key_config  = get_key_options(config_keychords)
-#custom_key_config.modifiers = [mod]
+def start_once():
+    home = os.path.expanduser('~')
+    subprocess.call([home + '/.config/tobi/autostart.sh'])
 
 keys = [
-     # custom_key_config,
-    # open menu
-    Key([mod], "space", 
-        lazy.spawn(
-            expandvars("$TOBI_ENV/Menu"), 
-            shell=True
-        ), 
-        desc="Open Menu"),
-
-    Key([mod], "w", 
-        lazy.spawn(
-            expandvars("$TOBI_ENV/WindowSwitch"), 
-            shell=True
-        ), 
-        desc="Open Menu"),
-
-
+    # A list of available commands that can be bound to keys can be found
+    # at https://docs.qtile.org/en/latest/manual/config/lazy.html
     # Switch between windows
+    Key([mod], "space", lazy.spawn(os.path.expanduser('~/.config/tobi/Menu')), desc="Open Menu"),
+
     Key([mod], "h", lazy.layout.left(), desc="Move focus to left"),
     Key([mod], "l", lazy.layout.right(), desc="Move focus to right"),
     Key([mod], "j", lazy.layout.down(), desc="Move focus down"),
     Key([mod], "k", lazy.layout.up(), desc="Move focus up"),
-
-    # Move windows 
+    # Move windows between left/right columns or move up/down in current stack.
+    # Moving out of range in Columns layout will create new column.
     Key([mod, "shift"], "h", lazy.layout.shuffle_left(), desc="Move window to the left"),
     Key([mod, "shift"], "l", lazy.layout.shuffle_right(), desc="Move window to the right"),
     Key([mod, "shift"], "j", lazy.layout.shuffle_down(), desc="Move window down"),
     Key([mod, "shift"], "k", lazy.layout.shuffle_up(), desc="Move window up"),
-
-    # Grow windows
+    # Grow windows. If current window is on the edge of screen and direction
+    # will be to screen edge - window would shrink.
     Key([mod, "control"], "h", lazy.layout.grow_left(), desc="Grow window to the left"),
     Key([mod, "control"], "l", lazy.layout.grow_right(), desc="Grow window to the right"),
     Key([mod, "control"], "j", lazy.layout.grow_down(), desc="Grow window down"),
     Key([mod, "control"], "k", lazy.layout.grow_up(), desc="Grow window up"),
     Key([mod], "n", lazy.layout.normalize(), desc="Reset all window sizes"),
-
     # Toggle between split and unsplit sides of stack.
     # Split = all windows displayed
     # Unsplit = 1 window displayed, like Max layout, but still with
@@ -218,16 +70,10 @@ keys = [
         lazy.layout.toggle_split(),
         desc="Toggle between split and unsplit sides of stack",
     ),
-
     Key([mod], "Return", lazy.spawn(terminal), desc="Launch terminal"),
-
     # Toggle between different layouts as defined below
     Key([mod], "Tab", lazy.next_layout(), desc="Toggle between layouts"),
-    Key([mod], "x", lazy.window.kill(), desc="Kill focused window"),
-
-    Key([mod], "b", lazy.hide_show_bar(), desc="Hides the bar"),
-
-    # Toggle fullscreen
+    Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),
     Key(
         [mod],
         "f",
@@ -253,136 +99,89 @@ for vt in range(1, 8):
         )
     )
 
-groups = [
-        Group(name="1", screen_affinity=0),
-        Group(name="2", screen_affinity=0),
-        Group(name="3", screen_affinity=0),
-        Group(name="4", screen_affinity=0),
-        Group(name="5", screen_affinity=0),
-        Group(name="6", screen_affinity=0),
-        Group(name="7", screen_affinity=0),
-        Group(name="8", screen_affinity=0),
-        Group(name="9", screen_affinity=1),
-]
 
-def go_to_group(name: str):
-    def _inner(qtile):
-        if len(qtile.screens) == 1:
-            qtile.groups_map[name].toscreen()
-            return
-        if name in '12345678':
-            qtile.focus_screen(0)
-            qtile.groups_map[name].toscreen()
-        else:
-            qtile.focus_screen(1)
-            qtile.groups_map[name].toscreen()
-
-    return _inner
+groups = [Group(i) for i in "123456789"]
 
 for i in groups:
-    keys.append(Key([mod], i.name, lazy.function(go_to_group(i.name))))
-
-def go_to_group_and_move_window(name: str):
-    def _inner(qtile):
-        if len(qtile.screens) == 1:
-            qtile.current_window.togroup(name, switch_group=True)
-            return
-        if name in "12345678":
-            qtile.current_window.togroup(name, switch_group=False)
-            qtile.focus_screen(0)
-            qtile.groups_map[name].toscreen()
-        elif name == '9':
-            qtile.current_window.togroup(name, switch_group=False)
-            qtile.focus_screen(1)
-            qtile.groups_map[name].toscreen()
-
-    return _inner
-
-# setup keys switching groups
-for i in groups:
-    keys.append(
-            Key([mod], 
-                i.name, 
-                lazy.function(
-                    go_to_group(i.name)
-                )
-            )
+    keys.extend(
+        [
+            # mod + group number = switch to group
+            Key(
+                [mod],
+                i.name,
+                lazy.group[i.name].toscreen(),
+                desc=f"Switch to group {i.name}",
+            ),
+            # mod + shift + group number = switch to & move focused window to group
+            Key(
+                [mod, "shift"],
+                i.name,
+                lazy.window.togroup(i.name, switch_group=True),
+                desc=f"Switch to & move focused window to group {i.name}",
+            ),
+            # Or, use below if you prefer not to switch to that group.
+            # # mod + shift + group number = move focused window to group
+            # Key([mod, "shift"], i.name, lazy.window.togroup(i.name),
+            #     desc="move focused window to group {}".format(i.name)),
+        ]
     )
-
-# setup keys for moving windows
-for i in groups:
-    keys.append(
-            Key([mod, "shift"], 
-                i.name, 
-                lazy.function(
-                    go_to_group_and_move_window(i.name)
-                )
-            )
-    )
-
-
 
 layouts = [
-    layout.Columns(
-        border_width=4,
-        border_focus="#999999",
-        border_normal="#222222",
-        margin=[3, 3, 3, 3],
-    ),
+    layout.Columns(border_focus_stack=["#d75f5f", "#8f3d3d"], border_width=4),
     layout.Max(),
+    # Try more layouts by unleashing below layouts.
+    # layout.Stack(num_stacks=2),
+    # layout.Bsp(),
+    # layout.Matrix(),
+    # layout.MonadTall(),
+    # layout.MonadWide(),
+    # layout.RatioTile(),
+    # layout.Tile(),
+    # layout.TreeTab(),
+    # layout.VerticalTile(),
+    # layout.Zoomy(),
 ]
 
 widget_defaults = dict(
     font="sans",
     fontsize=12,
-    padding=5,
+    padding=3,
 )
 extension_defaults = widget_defaults.copy()
 
 screens = [
-    Screen(top=bar.Bar(
+    Screen(
+        bottom=bar.Bar(
             [
-                qtile_extras.widget.CurrentLayoutIcon(
-                    background="000000", 
-                    **powerline
+                widget.CurrentLayout(),
+                widget.GroupBox(),
+                widget.Prompt(),
+                widget.WindowName(),
+                widget.Chord(
+                    chords_colors={
+                        "launch": ("#ff0000", "#ffffff"),
+                    },
+                    name_transform=lambda name: name.upper(),
                 ),
-                qtile_extras.widget.GroupBox(
-                    background="111111",
-                    **powerline
-                ),
-                qtile_extras.widget.WindowName(
-                    background="222222", 
-                    **powerline
-                ),
-                qtile_extras.widget.Clock(
-                    background="444444", 
-                    format='%y/%m/%d %H:%M',
-                    **powerline
-                ),
-                qtile_extras.widget.QuickExit(
-                    background="666666",
-                    default_text="&#9212;"
-                )
+                widget.TextBox("default config", name="default"),
+                widget.TextBox("Press &lt;M-r&gt; to spawn", foreground="#d75f5f"),
+                # NB Systray is incompatible with Wayland, consider using StatusNotifier instead
+                # widget.StatusNotifier(),
+                widget.Systray(),
+                widget.Clock(format="%Y-%m-%d %a %I:%M %p"),
+                widget.QuickExit(),
             ],
-            20,
-            background="225522"
-    )),
-    Screen(top=bar.Bar(
-            [
-                qtile_extras.widget.CurrentLayoutIcon(background="000000", **powerline),
-                qtile_extras.widget.GroupBox(
-                    background="111111",
-                    **powerline
-                ),
-                qtile_extras.widget.WindowName(background="222222", **powerline),
-                qtile_extras.widget.Clock(background="444444", **powerline),
-                qtile_extras.widget.QuickExit(
-                    background="666666",
-                    default_text="&#9212;"
-                )
-            ],
-            20,
-    ))
+            24,
+            # border_width=[2, 0, 2, 0],  # Draw top and bottom borders
+            # border_color=["ff00ff", "000000", "ff00ff", "000000"]  # Borders are magenta
+        ),
+        # You can uncomment this variable if you see that on X11 floating resize/moving is laggy
+        # By default we handle these events delayed to already improve performance, however your system might still be struggling
+        # This variable is set to None (no cap) by default, but you can set it to 60 to indicate that you limit it to 60 events per second
+        # x11_drag_polling_rate = 60,
+
+
+    ),
 ]
 
 # Drag floating layouts.
@@ -421,6 +220,10 @@ auto_minimize = True
 # When using the Wayland backend, this can be used to configure input devices.
 wl_input_rules = None
 
+# xcursor theme (string or None) and size (integer) for Wayland backend
+wl_xcursor_theme = None
+wl_xcursor_size = 24
+
 # XXX: Gasp! We're lying here. In fact, nobody really uses or cares about this
 # string besides java UI toolkits; you can see several discussions on the
 # mailing lists, GitHub issues, and other WM documentation that suggest setting
@@ -430,7 +233,4 @@ wl_input_rules = None
 # We choose LG3D to maximize irony: it is a 3D non-reparenting WM written in
 # java that happens to be on java's whitelist.
 wmname = "LG3D"
-
-
-
 

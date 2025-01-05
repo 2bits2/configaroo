@@ -1,5 +1,8 @@
-w   - Window Menu
+r   - WindowRename
 b   - Bar Menu
 uwc - UiChangeBackground
 ch  - ConnectHDMI
-s   - Session Menu
+l   - Launch
+s   - WindowSwitch
+x   - Session Menu
+

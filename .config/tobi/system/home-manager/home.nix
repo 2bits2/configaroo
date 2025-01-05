@@ -23,9 +23,6 @@
       pywal        # set the wallpaper and color scheme
       picom        # window transparency and stuff
 
-      git          # version control
-      gh           # git interacting with github
-
       gnumake      # for building dependencies
       gcc          # compiler
 

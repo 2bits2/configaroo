@@ -1,9 +1,11 @@
-# awesome fuzzy finding
-# completions
-eval "$(fzf --bash)"
+#!/bin/sh
 
 # initialize zoxide (cd alternative)
 eval "$(zoxide init bash)"
+
+# awesome fuzzy finding
+# completions
+eval "$(fzf --bash)"
 
 # eza setup
 alias l='eza --color=always -1 -l -a --git --git-repos --group-directories-first --icons'

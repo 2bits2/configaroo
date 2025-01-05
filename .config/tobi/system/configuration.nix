@@ -105,7 +105,7 @@
   };
 
   # Install firefox.
-  programs.firefox.enable = true;
+# programs.firefox.enable = true;
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
@@ -116,6 +116,9 @@
      home-manager # manage user installed software
      stow         # manage dotfile configuration
      vscode       # needed for coding
+     gh
+     git
+     firefox
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
